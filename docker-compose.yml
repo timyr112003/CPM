@@ -1,0 +1,33 @@
+services:
+  englishpro:
+    build: .
+    container_name: englishpro
+    ports:
+      - "3000:3000"
+    volumes:
+      - englishpro-db:/app/db          # база SQLite переживает пересоздание контейнера
+      - englishpro-backups:/app/backups
+    environment:
+      - DATABASE_URL=file:/app/db/custom.db
+      - BACKUP_KEEP=30
+      # Почта (SMTP): значения берутся из .env рядом с docker-compose.yml
+      - SMTP_HOST=${SMTP_HOST:-smtp.yandex.ru}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      # Напоминания о занятиях: секрет вызова планировщика и пояс времени
+      - CRON_SECRET=${CRON_SECRET:-}
+      - REMINDER_TIMEZONE=${REMINDER_TIMEZONE:-Europe/Moscow}
+      - REMINDER_BUILTIN=${REMINDER_BUILTIN:-1}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  englishpro-db:
+  englishpro-backups:

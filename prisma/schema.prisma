@@ -1,0 +1,87 @@
+// Prisma-схема EnglishPro
+// SQLite (файл db/custom.db, путь в .env → DATABASE_URL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Аккаунт пользователя. Пароль хранится только в виде scrypt-хеша.
+/// Роли — НАБОР: TEACHER (учительский кабинет) и/или ADMIN (административный);
+/// MAIN_ADMIN — владелец (неприкосновенен, админ-права включает).
+/// Один логин/пароль на человека; кабинет выбирается после входа и
+/// переключается внутри аккаунта без повторной авторизации.
+/// Статус: ACTIVE / DISABLED (архивация аккаунта с сохранением данных).
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  name               String
+  passwordHash       String
+  photo              String?
+  /// JSON-массив ролей: ["TEACHER"] / ["ADMIN"] / ["ADMIN","TEACHER"] / ["MAIN_ADMIN"]
+  roles              String    @default("[\"TEACHER\"]")
+  status             String    @default("ACTIVE")
+  mustChangePassword Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  sessions           Session[]
+  userData           UserData?
+  resetTokens        PasswordResetToken[]
+}
+
+/// Серверная сессия (httpOnly cookie «ep_session» → токен).
+model Session {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+/// Данные приложения (ученики, уроки, финансы, абонементы, настройки)
+/// в виде версионированного JSON-снапшота на пользователя.
+/// Обновляется клиентским sync-движком (autosave) и загружается при входе.
+model UserData {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      String
+  updatedAt DateTime @updatedAt
+}
+
+/// Одноразовый токен самостоятельного сброса пароля («Забыли пароль?»).
+/// В БД хранится только sha256-хеш токена; ссылка из письма живёт до expiresAt,
+/// использованный токен помечается usedAt и повторно не принимается.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Журнал аудита: кто, что и над кем сделал в системе
+/// (создание/архивация аккаунтов, смена ролей, сброс паролей, вход в аккаунты).
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actorEmail  String?
+  action      String
+  targetId    String?
+  targetEmail String?
+  meta        String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([targetId])
+}

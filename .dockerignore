@@ -1,0 +1,17 @@
+node_modules
+.next
+db
+backups
+download
+upload
+skills
+examples
+tests
+tool-results
+mini-services
+.git
+*.log
+worklog.md
+tsconfig.tsbuildinfo
+.env
+.env.local
