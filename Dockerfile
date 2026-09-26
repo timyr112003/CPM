@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json bun.lock* package-lock.json* ./
 COPY prisma ./prisma
 # postinstall сам выполняет prisma generate
-RUN npm install --no-audit --no-fund
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # ---- 2. Сборка ----
 FROM node:20-alpine AS build
