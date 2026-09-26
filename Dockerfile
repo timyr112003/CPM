@@ -43,3 +43,4 @@ EXPOSE 3000
 
 # При старте: применить схему к БД (создаст таблицы при первом запуске) → запустить сервер
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
+
