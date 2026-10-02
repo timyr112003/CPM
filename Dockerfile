@@ -32,9 +32,8 @@ COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 
 # Prisma CLI для первичной миграции БД при старте + скрипт бэкапа
-COPY --from=build /app/node_modules/prisma ./node_modules/prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/.bin ./node_modules/.bin
+# Prisma и все его зависимости
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 
 RUN mkdir -p /app/db /app/backups
