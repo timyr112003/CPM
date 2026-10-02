@@ -35,9 +35,10 @@ COPY --from=build /app/.next/static ./.next/static
 # Prisma и все его зависимости
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/db/custom.db /app/seed/custom.db
 
 RUN mkdir -p /app/db /app/backups
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "./node_modules/.bin/prisma db push --skip-generate && node server.js"]
+CMD ["sh", "-c", "if [ ! -f /app/db/custom.db ]; then cp /app/seed/custom.db /app/db/custom.db; fi && npx prisma db push --skip-generate && node server.js"]
