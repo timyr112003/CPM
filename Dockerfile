@@ -34,13 +34,11 @@ COPY --from=build /app/.next/static ./.next/static
 # Prisma CLI для первичной миграции БД при старте + скрипт бэкапа
 COPY --from=build /app/node_modules/prisma ./node_modules/prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=build /app/node_modules/.bin ./node_modules/.bin
 COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/scripts/backup-db.mjs ./scripts/backup-db.mjs
 
 RUN mkdir -p /app/db /app/backups
 
 EXPOSE 3000
 
-# При старте: применить схему к БД (создаст таблицы при первом запуске) → запустить сервер
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
-
+CMD ["sh", "-c", "./node_modules/.bin/prisma db push --skip-generate && node server.js"]
